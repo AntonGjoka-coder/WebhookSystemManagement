@@ -2,7 +2,7 @@ using Domain.Models;
 using Infrastructure.Services;
 using Microsoft.AspNetCore.Mvc;
 
-namespace ManagementSystemAPI.Controllers
+namespace WebAPI.Controllers
 {
     [ApiController]
     [Route("api/webhooks")]
@@ -20,35 +20,81 @@ namespace ManagementSystemAPI.Controllers
         [HttpPost]
         public IActionResult CreateWebhook([FromBody] Webhook webhook)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             webhook.Id = Guid.NewGuid();
-            _redisService.SaveWebhook(webhook);
-            _eventBusService.SubscribeToEvent(webhook.EventName);
-            return Ok(webhook);
+            
+            try
+            {
+                _redisService.SaveWebhook(webhook);
+                _eventBusService.SubscribeToEvent(webhook.EventName);
+
+                return CreatedAtAction(nameof(GetWebhook), new { id = webhook.Id }, webhook);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while creating the webhook.", details = ex.Message });
+            }
         }
 
         [HttpGet("{id}")]
         public IActionResult GetWebhook(Guid id)
         {
-            var webhook = _redisService.GetWebhook(id);
-            if (webhook == null)
+            try
             {
-                return NotFound();
+                var webhook = _redisService.GetWebhook(id);
+                if (webhook == null)
+                {
+                    return NotFound(new { message = "Webhook not found." });
+                }
+
+                return Ok(webhook);
             }
-            return Ok(webhook);
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while retrieving the webhook.", details = ex.Message });
+            }
         }
 
         [HttpGet("{id}/logs")]
         public IActionResult GetWebhookLogs(Guid id)
         {
-            var logs = _redisService.GetWebhookLogs(id);
-            return Ok(logs);
+            try
+            {
+                var logs = _redisService.GetWebhookLogs(id);
+                if (logs == null || !logs.Any())
+                {
+                    return NotFound(new { message = "No logs found for the webhook." });
+                }
+
+                return Ok(logs);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while retrieving logs.", details = ex.Message });
+            }
         }
 
         [HttpPost("trigger")]
         public IActionResult TriggerEvent([FromBody] EventData eventData)
         {
-            _eventBusService.PublishEvent(eventData.EventName, eventData.Payload);
-            return Ok("Event triggered successfully.");
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+                _eventBusService.PublishEvent(eventData.EventName, eventData.Payload);
+                return Ok(new { message = "Event triggered successfully." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while triggering the event.", details = ex.Message });
+            }
         }
     }
 }
