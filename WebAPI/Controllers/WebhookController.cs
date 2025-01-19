@@ -1,4 +1,5 @@
 using Domain.Models;
+using Infrastructure.Interfaces.Services;
 using Infrastructure.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,10 +9,10 @@ namespace WebAPI.Controllers
     [Route("api/webhooks")]
     public class WebhookController : ControllerBase
     {
-        private readonly RedisService _redisService;
-        private readonly EventBusService _eventBusService;
+        private readonly IRedisService _redisService;
+        private readonly IEventBusService _eventBusService;
 
-        public WebhookController(RedisService redisService, EventBusService eventBusService)
+        public WebhookController(IRedisService redisService, IEventBusService eventBusService)
         {
             _redisService = redisService;
             _eventBusService = eventBusService;

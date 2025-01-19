@@ -1,12 +1,13 @@
+using Infrastructure.Interfaces.Services;
 using Microsoft.Extensions.Hosting;
 
 namespace Infrastructure.Services;
 
 public class EventBusListenerService : IHostedService
 {
-    private readonly EventBusService _eventBusService;
+    private readonly IEventBusService _eventBusService;
 
-    public EventBusListenerService(EventBusService eventBusService)
+    public EventBusListenerService(IEventBusService eventBusService)
     {
         _eventBusService = eventBusService;
     }

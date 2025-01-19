@@ -1,17 +1,19 @@
 using Doamin.Models;
 using StackExchange.Redis;
 using Domain.Models;
+using Infrastructure.Interfaces.Services;
+using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 
 namespace Infrastructure.Services
 {
-    public class RedisService
+    public class RedisService : IRedisService
     {
         private readonly IConnectionMultiplexer _connection;
 
-        public RedisService(string redisConnectionString)
+        public RedisService(IConfiguration configuration)
         {
-            _connection = ConnectionMultiplexer.Connect(redisConnectionString);
+            _connection = ConnectionMultiplexer.Connect(configuration.GetConnectionString("RedisConnection"));
         }
 
         public void SaveWebhook(Webhook webhook)

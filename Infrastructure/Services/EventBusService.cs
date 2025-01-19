@@ -4,21 +4,20 @@ using Newtonsoft.Json;
 using StackExchange.Redis;
 using System.Net.Http;
 using Doamin.Models;
+using Infrastructure.Interfaces.Services;
 using Microsoft.Extensions.Configuration;
 
 namespace Infrastructure.Services
 {
-    public class EventBusService
+    public class EventBusService : IEventBusService
     {
-        private readonly RedisService _redisService;
-        private readonly IConfiguration _configuration;
+        private readonly IRedisService _redisService;
         private readonly IConnectionMultiplexer _connection;
 
-        public EventBusService(RedisService redisService, IConfiguration configuration)
+        public EventBusService(IRedisService redisService, IConfiguration configuration)
         {
             _redisService = redisService;
-            _configuration = configuration;
-            _connection = ConnectionMultiplexer.Connect(_configuration.GetConnectionString("RedisConnection"));
+            _connection = ConnectionMultiplexer.Connect(configuration.GetConnectionString("RedisConnection"));
         }
 
         public void SubscribeToEvent(string eventName)
@@ -47,7 +46,7 @@ namespace Infrastructure.Services
             }
         }
 
-        public List<Webhook> GetWebhooksForEvent(string eventName)
+        private List<Webhook> GetWebhooksForEvent(string eventName)
         {
             var webhookIds = _redisService.GetWebhookIdsForEvent(eventName);
             return webhookIds.Select(id => _redisService.GetWebhook(id)).Where(webhook => webhook != null).ToList();
